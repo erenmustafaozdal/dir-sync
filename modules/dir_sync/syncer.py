@@ -13,10 +13,15 @@ dirsync paketinden esinlenmiştir.
 """
 
 import logging
+import stat
 import time
+import os
+import shutil
+import json
 from typing import Union
 from pathlib import Path
 from .version import __pkg_name__
+from datetime import datetime, timedelta
 
 
 class DCMP:
@@ -116,6 +121,9 @@ class Syncer:
         # belirli süreyi geçenleri tamamen sil
         self._sync_trash()
 
+        # iki dizin de eşitlendi. veritabanını güncelle
+        self._sync_db()
+
     def _sync_trash(self):
         trashed_paths = self._walk_in_dir(self._trash_path)
         for p, item in trashed_paths.items():
@@ -147,6 +155,29 @@ class Syncer:
                 self._deleted_paths[p] = item | {
                     "deleted_at": datetime.now().timestamp()
                 }
+
+    def _sync_db(self):
+        pc_paths = self._walk_in_dir(self._pc_path, False)
+        drive_paths = self._walk_in_dir(self._drive_path, False)
+
+        # geri dönüşüme gönderilenler veritabanına eklenir
+        for file in self._trashed_paths.keys():
+            try:
+                pc_paths[file] = self._trashed_paths[file]
+                drive_paths[file] = self._trashed_paths[file]
+            except Exception as e:
+                self.log(str(e))
+                continue
+
+        # geri dönüşümden silinenler veritabanından çıkartılır
+        for file in self._deleted_paths.keys():
+            if file in pc_paths:
+                del pc_paths[file]
+            if file in drive_paths:
+                del drive_paths[file]
+
+        self._write_db(self._pc_path, pc_paths)
+        self._write_db(self._drive_path, drive_paths)
 
     def _sync_update(self, cmp: DCMP, dir1: Path, dir2: Path):
         """ Her iki tarafta da olan dosyaları zaman damgasına göre günceller """
@@ -449,6 +480,39 @@ class Syncer:
         info["created_at"] = path_stat.st_ctime
 
         return info
+
+    def _write_db(self, _dir: Path, paths: dict) -> None:
+        """
+        Tarama sonucunda gelen dosya ve klasör yollarını veritabanına yazar
+
+        :param _dir: dizin yolu
+        :type _dir: str
+        :param paths: dosya ve klasör yolları
+        :return: Hiçbir şey döndürmez
+        :rtype: None
+        """
+
+        db_file = _dir.joinpath(self._db_file)
+        with open(db_file, mode="w", encoding="utf-8") as f:
+            json.dump(paths, f, ensure_ascii=False)
+
+    def _read_db(self, _dir: Path) -> dict:
+        """
+        Önceki veritabanını okur ve dosya ve klasörlerin yollarını döndürür
+
+        :param _dir: dizin yolu
+        :type _dir: str
+        :return: dosya ve klasörlerin yolları
+        :rtype: set
+        """
+
+        db_file = os.path.join(_dir, self._db_file)
+        paths = {}
+        if os.path.exists(db_file):
+            with open(db_file, mode='r', encoding='utf-8') as f:
+                paths = json.load(f)
+
+        return paths
 
     def _create_dir(self, _dir: Path) -> bool:
         """
