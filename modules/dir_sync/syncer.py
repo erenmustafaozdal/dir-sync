@@ -112,6 +112,42 @@ class Syncer:
         # İki kaynakta da yer alan dosyaları son değişikliğe göre güncelle
         self._sync_update(self._dcmp, self._pc_path, self._drive_path)
 
+        # geri dönüşüm kutusu kontrolü yap.
+        # belirli süreyi geçenleri tamamen sil
+        self._sync_trash()
+
+    def _sync_trash(self):
+        trashed_paths = self._walk_in_dir(self._trash_path)
+        for p, item in trashed_paths.items():
+            # yeni geri dönüşüme yollanan değişkenden,
+            # yoksa daha önce geri dönüşüme yollandıysa veritabanından (pc, drive)
+            # geri dönüşüme yollanma zamanı alınır
+            if self._trashed_paths.get(p, None):
+                t_time = self._trashed_paths[p]["trashed_at"]
+            elif self._cmp_pc.db.get(p, None) and self._cmp_pc.db[p].get("trashed_at", None):
+                t_time = self._cmp_pc.db[p]["trashed_at"]
+            elif self._cmp_drive.db.get(p, None) and self._cmp_drive.db[p].get("trashed_at", None):
+                t_time = self._cmp_drive.db[p]["trashed_at"]
+            else:
+                t_time = item["created_at"]
+
+            trashed_time = datetime.fromtimestamp(t_time)
+            trashed_time += timedelta(days=int(os.getenv("TRASH_DAY")))
+
+            if trashed_time.timestamp() < datetime.now().timestamp():
+                full_path = self._trash_path.joinpath(p)
+
+                if full_path.exists():
+                    if item["is_dir"]:
+                        self._remove_dir(full_path)
+                    else:
+                        self._remove_file(full_path)
+
+                # tamamen silinenlere ekle
+                self._deleted_paths[p] = item | {
+                    "deleted_at": datetime.now().timestamp()
+                }
+
     def _sync_update(self, cmp: DCMP, dir1: Path, dir2: Path):
         """ Her iki tarafta da olan dosyaları zaman damgasına göre günceller """
         for f in cmp.common:
@@ -299,6 +335,29 @@ class Syncer:
                 self.log(str(e))
                 self._numtrashffld += 1
                 continue
+
+    def _remove_dir(self, path: Path) -> None:
+        """ klasör siler """
+        try:
+            os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+            shutil.rmtree(path, True)
+            self._numdeldirs += 1
+        except shutil.Error as e:
+            self.log(str(e))
+            self._numdeldfld += 1
+
+    def _remove_file(self, path: Path) -> None:
+        """ dosya siler """
+        try:
+            try:
+                os.remove(path)
+            except PermissionError:
+                os.chmod(path, stat.S_IWRITE)
+                os.remove(path)
+            self._numdelfiles += 1
+        except OSError as e:
+            self.log(str(e))
+            self._numdelffld += 1
 
     @staticmethod
     def _compare(pc_paths: set, drive_paths: set) -> DCMP:
