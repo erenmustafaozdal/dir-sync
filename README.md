@@ -6,10 +6,10 @@ Aşağıdaki video ile demoyu izleyebilirsin.
 [![Facebook'taki videonun göreseli](https://scontent-ist1-1.xx.fbcdn.net/v/t15.5256-10/300819345_784912042628224_1018950493210215850_n.jpg?stp=dst-jpg_p180x540&_nc_cat=110&ccb=1-7&_nc_sid=ad6a45&_nc_eui2=AeG9UYgvJVikMgeTnHX6yMtpw6vJxV6SmEHDq8nFXpKYQY9iCqduoJAL5vssJcaAaeTU-mkTEJdK2MElz_HbBnLD&_nc_ohc=mPWG_k1naVUAX8-cUCK&_nc_ht=scontent-ist1-1.xx&oh=00_AT9Fc4tIMSrffB55fsYL2gYi0u85wKCd8wL3pmd1KywM6w&oe=630E2F49)](https://www.facebook.com/eren.mustafa.ozdal/posts/pfbid09ShhXqMyXyCLYDCEGnQ2358yVXDSpjZT4ax89nN28bgQ15TtCbJ711RZsjX1TgjEl)
 
 ## Özellikleri
-✅ Bilgisayar'dan sabit diske veya sabit diskten bilgisayara; çift yönlü senkronizasyon yapar. Bu şekilde aynı harici sabit diskteki dosyaları birden fazla bilgisayarda kullanıyorsanız, sabit diskinizi aracı yaparak tüm bilgisayarlarınızı senkronize tutar.
-✅ Dosyaların son değişiklik zamanını kontrol eder. Yeni değişiklikleri diğer tarafa yansıtır.
-✅ Silme işlemlerinde geri dönüşüm klasörüne *(trash)* taşıma yapar. Bu klasör Dir Sync'in bulunduğu klasörde oluşturulur. 30 gün süreyle kendi geri dönüşüm klasöründe tutar. Ardından bilgisayarın geri dönüşüm kutusuna gönderir. Bu 30 günlük süre ayar dosyasından (`.env`) değiştirilebilir.
-✅ Dir Sync eğer harici sabit disk takılı değilse; çalışmaz.
+✅ Bilgisayar'dan sabit diske veya sabit diskten bilgisayara; çift yönlü senkronizasyon yapar. Bu şekilde aynı harici sabit diskteki dosyaları birden fazla bilgisayarda kullanıyorsanız, sabit diskinizi aracı yaparak tüm bilgisayarlarınızı senkronize tutar.<br>
+✅ Dosyaların son değişiklik zamanını kontrol eder. Yeni değişiklikleri diğer tarafa yansıtır.<br>
+✅ Silme işlemlerinde geri dönüşüm klasörüne *(trash)* taşıma yapar. Bu klasör Dir Sync'in bulunduğu klasörde oluşturulur. 30 gün süreyle kendi geri dönüşüm klasöründe tutar. Ardından bilgisayarın geri dönüşüm kutusuna gönderir. Bu 30 günlük süre ayar dosyasından (`.env`) değiştirilebilir.<br>
+✅ Dir Sync eğer harici sabit disk takılı değilse; çalışmaz.<br>
 ✅ Yaptığı tüm işlemlerin günlüklerini `logs` klasöründe gün gün tutar.
 
 ## Gereksinimler
