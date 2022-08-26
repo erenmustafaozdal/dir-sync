@@ -109,6 +109,79 @@ class Syncer:
         # Sadece hedefte yer alanlar kaynağa da eklenir
         self._sync_copy(self._dcmp.right_only, self._drive_path, self._pc_path)
 
+        # İki kaynakta da yer alan dosyaları son değişikliğe göre güncelle
+        self._sync_update(self._dcmp, self._pc_path, self._drive_path)
+
+    def _sync_update(self, cmp: DCMP, dir1: Path, dir2: Path):
+        """ Her iki tarafta da olan dosyaları zaman damgasına göre günceller """
+        for f in cmp.common:
+            file1 = dir1.joinpath(f)
+            file2 = dir2.joinpath(f)
+
+            try:
+                st1 = file1.stat()
+                st2 = file2.stat()
+            except os.error:
+                return -1
+
+            # eğer dosya ise
+            if stat.S_ISREG(st1.st_mode):
+                need_update = self._cmptimestamps(st1, st2)
+                if not need_update:
+                    continue
+
+                direction = ">>" if need_update > 0 else "<<"
+                self.log(f'Dosya güncelleniyor:'
+                         f' {f} - {dir1} {direction} {dir2}')
+
+                from_file = file1 if need_update > 0 else file2
+                to_file = file1 if need_update < 0 else file2
+                self._update(from_file, to_file)
+
+    def _update(self, from_file: Path, to_file: Path) -> int:
+        """
+        Dosya günceleme işlemini yapar
+
+        :param from_file: yeni dosya
+        :type from_file: Path
+        :param to_file: eski dosya
+        :type to_file: Path
+        :return:
+        """
+
+        try:
+            os.chmod(to_file, 1638)  # 1638 = 0o666
+
+            try:
+                self._copy_file_proc(from_file, to_file)
+                self._numtimeupdates += 1
+                return 0
+            except (IOError, OSError) as e:
+                self.log(str(e))
+                self._numupdsfld += 1
+                return -1
+
+        except Exception as e:
+            self.log(str(e))
+            return -1
+
+    @staticmethod
+    def _cmptimestamps(filest1, filest2) -> Union[bool, int]:
+        """ Compare time stamps of two files and return True
+        if file1 (source) is more recent than file2 (target) """
+
+        # kaynak dosya ve hedef dosya değişim tarihi farkı alınır
+        diff = int((filest1.st_mtime - filest2.st_mtime) * 1000)
+
+        # eğer dosyalar aynı ise False döndür
+        if diff == 0:
+            return False
+
+        # değişmiş ise farkı döndür
+        # pozitif ise kaynak daha yeni
+        # negatif ise hedef daha yeni
+        return diff
+
     def _sync_copy(self, created: set, source: Path, target: Path) -> None:
         """ yeni oluşturulması gereken dosya ve klasörleri oluşturur """
         for f in created:
