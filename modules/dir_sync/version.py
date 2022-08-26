@@ -37,4 +37,3 @@ def get_git_chgset():
 
 
 __version__ = get_version()
-print(__version__)
