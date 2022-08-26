@@ -98,6 +98,54 @@ class Syncer:
         drive_paths, self._cmp_drive = self._self_compare(self._drive_path)
         # iki dizin arasındaki farklar alınır
         self._dcmp = self._compare(pc_paths, drive_paths)
+
+        # Kaynakta silinmişler hedefte de silinir
+        self._sync_remove(self._cmp_pc, self._drive_path)
+        # Hedefte silinmişler kaynakta da silinir
+        self._sync_remove(self._cmp_drive, self._pc_path)
+
+    def _sync_remove(self, cmp: DCMP, target: Path) -> None:
+        """ silinmesi gereken dosya ve klasörleri siler """
+
+        for f in cmp.left_only:
+            full_f = target.joinpath(f)
+
+            try:
+                full_trash = Path(self._trash_path).joinpath(f)
+                # eğer daha önce geri dönüşüme gönderildi isegeç
+                if full_trash.exists():
+                    continue
+
+                # geri dönüşüm dizinleri oluşturulur
+                trash_dir = full_trash.parent
+                if not trash_dir.exists():
+                    self._create_dir(trash_dir)
+
+                # eğer yol (path) varsa taşıma işlemi yapılır
+                # eğer yol yoksa; yani ana klasör ile taşınma işlemi yapıldıysa
+                # taşıma işlemine girilmez, sadece veritabanı kaydı için
+                # geri dönüşüme gönderilenler arasında kaydedilir
+                if full_f.exists():
+                    self.log(f'Geri dönüşüme gönderiliyor: {full_f}')
+                    trash_dir.chmod(1911)  # 1911 = 0o777
+                    shutil.move(full_f, full_trash)
+
+                # dosya veya klasör sayı bilgileri işlenir
+                if full_trash.is_dir():
+                    self._numtrashdirs += 1
+                else:
+                    self._numtrashfiles += 1
+
+                # silinenlere eklenir
+                self._trashed_paths[f] = self.get_file_info(full_trash) | {
+                    "trashed_at": datetime.now().timestamp(),
+                    "trash_from": str(target),
+                }
+            except Exception as e:
+                self.log(str(e))
+                self._numtrashffld += 1
+                continue
+
     @staticmethod
     def _compare(pc_paths: set, drive_paths: set) -> DCMP:
         """
@@ -188,6 +236,25 @@ class Syncer:
         info["created_at"] = path_stat.st_ctime
 
         return info
+
+    def _create_dir(self, _dir: Path) -> bool:
+        """
+        Gelen dizin yolunu oluşturur. Hata olmazsa True, olurse False döndürür
+        :param _dir: dizin yolu
+        :type _dir: str
+        :return: sonucu döndürür
+        :rtype: bool
+        """
+
+        self.log(f'Yeni klasör oluşturuluyor: {_dir}')
+        try:
+            os.makedirs(_dir)
+            self._numnewdirs += 1
+            return True
+        except Exception as e:
+            self.log(str(e))
+            self._numdirsfld += 1
+            return False
 
     def report(self):
         """ Print report of work at the end """
