@@ -104,6 +104,87 @@ class Syncer:
         # Hedefte silinmişler kaynakta da silinir
         self._sync_remove(self._cmp_drive, self._pc_path)
 
+        # Sadece kaynakta yer alanlar hedefe de eklenir
+        self._sync_copy(self._dcmp.left_only, self._pc_path, self._drive_path)
+        # Sadece hedefte yer alanlar kaynağa da eklenir
+        self._sync_copy(self._dcmp.right_only, self._drive_path, self._pc_path)
+
+    def _sync_copy(self, created: set, source: Path, target: Path) -> None:
+        """ yeni oluşturulması gereken dosya ve klasörleri oluşturur """
+        for f in created:
+            full_f = source.joinpath(f)
+            try:
+                st = full_f.stat()
+            except os.error:
+                continue
+
+            if stat.S_ISREG(st.st_mode):
+                # dosya kopyalanır
+                self._copy(f, source, target)
+            elif stat.S_ISDIR(st.st_mode):
+                to_make = target.joinpath(f)
+                if not os.path.exists(to_make):
+                    self._create_dir(to_make)
+
+    def _copy(self, path: str, source: Path, target: Path) -> None:
+        """
+        Dosya kopyalama işlemi yapar
+
+        :param path: dosya adı
+        :type path: str
+        :param source: kaynak dizin
+        :type source: Path
+        :param target: hedef dizin
+        :type target: Path
+        :return:
+        """
+
+        rel_path = Path(path)
+        rel_dir = rel_path.parent
+        filename = rel_path.name
+
+        dir2_root = target
+
+        dir1 = source.joinpath(rel_dir)
+        dir2 = target.joinpath(rel_dir)
+
+        self.log(f'Dosya kopyalanıyor: {filename} - {dir1} >> {dir2}')
+
+        try:
+            # hedef klasör yoksa oluşturulur
+            if not os.path.exists(dir2):
+                # 1911 = 0o777
+                os.chmod(os.path.dirname(dir2_root), 1911)
+                self._create_dir(dir2)
+
+            os.chmod(dir2, 1911)  # 1911 = 0o777
+
+            sourcefile = dir1.joinpath(filename)
+            targetfile = dir2.joinpath(filename)
+            # kaynağın tipine göre (sembolik link veya dosya) kopyalama yapılır
+            try:
+                self._copy_file_proc(sourcefile, targetfile)
+                self._numfiles += 1
+            except (IOError, OSError) as e:
+                self.log(str(e))
+                self._numcopyfld += 1
+
+        except Exception as e:
+            self.log(f'Dosya kopyalanırken bir hata oldu {filename}')
+            self.log(str(e))
+
+    @staticmethod
+    def _copy_file_proc(sourcefile, targetfile):
+        if os.path.islink(sourcefile):
+            os.symlink(os.readlink(sourcefile), targetfile)
+        else:
+            try:
+                shutil.copy2(sourcefile, targetfile)
+            except PermissionError:
+                if os.path.exists(targetfile):
+                    os.chmod(targetfile, stat.S_IWRITE)
+                shutil.copy2(sourcefile, targetfile)
+
     def _sync_remove(self, cmp: DCMP, target: Path) -> None:
         """ silinmesi gereken dosya ve klasörleri siler """
 
