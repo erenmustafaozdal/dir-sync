@@ -1,0 +1,6 @@
+# bilgisayarda eşitlenecek klasörün yolu
+PC="C:\Users\kullanici\esitlenecek-klasör"
+# tercihen hard diskte eşitlenecek klasörün yolu
+DRIVE="D:\esitlenecek-klasör"
+# dosya ve klasörler geri dönüşümde kaç gün kalacak
+TRASH_DAY=30
