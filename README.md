@@ -1,5 +1,5 @@
 
-# Dir Sync
+# Dir Sync [BETA]
 Dir Sync; bilgisayarınızdaki dosyaları, harici sabit diskinizle eşitlemenizi sağlar. Dilerseniz harici sabit disk yerine, bilgisayarınızdaki iki ayrı klasörü de eşitleyebilirsiniz.
 
 Aşağıdaki video ile demoyu izleyebilirsin.
