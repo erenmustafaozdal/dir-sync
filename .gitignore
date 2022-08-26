@@ -1,0 +1,11 @@
+# Derlenmiş ön bellek dosyalarının klasörünü gizle
+__pycache__/
+
+# PyCharm IDE klasörünü gizle
+.idea/
+
+# bilgisayara özel ayarları, log dosyalarını
+.env
+logs/*
+hedef/*
+kaynak/*
