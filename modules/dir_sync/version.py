@@ -6,7 +6,7 @@ import subprocess
 
 __pkg_name__ = 'dir-sync'
 
-__version_info__ = (1, 0, 0, 'beta', 0)
+__version_info__ = (1, 0, 0, 'beta', 1)
 
 
 def get_version(version=__version_info__):
@@ -16,8 +16,7 @@ def get_version(version=__version_info__):
     assert len(version) == 5
     assert version[3] in dev_st.keys()
 
-    n = 2 + (version[2] != 0)
-    version_str = '.'.join([str(v) for v in version[:n]])
+    version_str = '.'.join([str(v) for v in version[:3]])
 
     if version[3] == 'final':
         return version_str
@@ -25,7 +24,7 @@ def get_version(version=__version_info__):
     if version[3:] == ('alpha', 0):
         return '%s.dev0+%s' % (version_str, get_git_chgset())
     else:
-        return ''.join((version_str, dev_st[version[3]], str(version[4])))
+        return f'{version_str}-{dev_st[version[3]]}.{version[4]}'
 
 
 def get_git_chgset():
