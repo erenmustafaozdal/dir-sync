@@ -45,7 +45,7 @@ Aşağıdaki açıklamalara göre ayarlamaları yapın.
 
 
 ### 3. Python Kurulumu
-`3.9` veya daha yeni bir Python sürümünü bilgisayarınıza https://pypi.org/project/pipenv adresinden indirip kurun.
+`3.9` veya daha yeni bir Python sürümünü bilgisayarınıza https://www.python.org/downloads adresinden indirip kurun.
 
 ### 4. Pipenv Kurulumu
 Dir Sync'e özel bir sanal ortam kurmanızı tavsiye ederim. Eğer bilgisayarınızda daha sonradan geliştirme yapacaksanız veya başka python programları kullanacaksanız versiyon çakışmalarının önüne bu şekilde geçmiş olursunuz.
